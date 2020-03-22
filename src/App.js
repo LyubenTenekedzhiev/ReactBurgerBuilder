@@ -1,27 +1,33 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { Route, Switch, withRouter, Redirect } from "react-router-dom";
 import { connect } from "react-redux";
 
 import Layout from "./components/Layout/Layout";
 import BurgerBuilder from "./containers/BurgerBuilder/BurgerBuilder";
-import Checkout from "./containers/Checkout/Checkout";
-import Orders from "./containers/Orders/Orders";
-import Auth from "./containers/Auth/Auth";
 import Logout from "./containers/Auth/Logout/Logout";
 import * as actions from "./store/actions/index";
 
-const App = props => {
-  // componentDidMount() {
-  //   this.props.onTryAutoSignup();
-  // }
+const Checkout = React.lazy(() => {
+  return import("./containers/Checkout/Checkout");
+});
 
+const Auth = React.lazy(() => {
+  return import("./containers/Auth/Auth");
+});
+
+const Orders = React.lazy(() => {
+  return import("./containers/Orders/Orders");
+});
+
+const App = props => {
+  const { onTryAutoSignup } = props;
   useEffect(() => {
-    props.onTryAutoSignup();
-  }, [])
+    onTryAutoSignup();
+  }, [onTryAutoSignup]);
 
   let routes = (
     <Switch>
-      <Route path='/auth' component={Auth} />
+      <Route path='/auth' render={props => <Auth {...props} />} />
       <Route path='/' exact component={BurgerBuilder} />
       <Redirect to='/' />
     </Switch>
@@ -30,10 +36,10 @@ const App = props => {
   if (props.isAuthenticated) {
     routes = (
       <Switch>
-        <Route path='/checkout' component={Checkout} />
-        <Route path='/orders' component={Orders} />
+        <Route path='/checkout' render={props => <Checkout {...props} />} />
+        <Route path='/orders' render={props => <Orders {...props} />} />
         <Route path='/logout' component={Logout} />
-        <Route path='/auth' component={Auth} />
+        <Route path='/auth' render={props => <Auth {...props} />} />
         <Route path='/' exact component={BurgerBuilder} />
         <Redirect to='/' />
       </Switch>
@@ -41,7 +47,9 @@ const App = props => {
   }
   return (
     <div>
-      <Layout>{routes}</Layout>
+      <Layout>
+        <Suspense fallback={<p>Loading...</p>}>{routes}</Suspense>
+      </Layout>
     </div>
   );
 };
